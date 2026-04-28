@@ -435,6 +435,7 @@ function setSyncStatus(s){
   const[t,c]=m[s]||m.saved; el.textContent=t; el.className=c;
 }
 
+// Читаем данные через GET
 async function apiGet(){
   if(NO_BACKEND) return null;
   try{
@@ -444,11 +445,19 @@ async function apiGet(){
   }catch{return null;}
 }
 
-async function apiPost(body){
+// Сохраняем через GET с параметром ?action=save&data=... (обход CORS)
+async function apiSave(){
   if(NO_BACKEND){setSyncStatus('offline');return;}
   try{
-    await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
-  }catch{setSyncStatus('error');}
+    const payload = encodeURIComponent(JSON.stringify({meetings, curIdx}));
+    const url = APPS_SCRIPT_URL+'?action=save&data='+payload+'&t='+Date.now();
+    const r = await fetch(url);
+    const d = await r.json();
+    if(d.ok) setSyncStatus('saved');
+    else setSyncStatus('error');
+  }catch{
+    setSyncStatus('error');
+  }
 }
 
 // Дебаунс-сохранение — собирает изменения 600мс и отправляет одним запросом
@@ -462,17 +471,7 @@ function scheduleSave(){
 async function saveToSheets(){
   if(NO_BACKEND){setSyncStatus('offline');return;}
   setSyncStatus('saving');
-  try{
-    // Сохраняем всё состояние одним запросом
-    await fetch(APPS_SCRIPT_URL,{
-      method:'POST',
-      body:JSON.stringify({action:'save_all',meetings,curIdx}),
-      headers:{'Content-Type':'application/json'}
-    });
-    setSyncStatus('saved');
-  }catch{
-    setSyncStatus('error');
-  }
+  await apiSave();
 }
 
 // LocalStorage резервная копия
