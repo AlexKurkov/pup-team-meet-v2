@@ -326,7 +326,7 @@ input[type="date"]:focus{outline:none;}
 // ════════════════════════════════════════════════════════════
 // CONFIG — вставь URL своего Apps Script
 // ════════════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw7PpDaaSE0AOnwJ8GDX7D8gi-F9e91FNZzJzfOoGRuYuiGc_V4nOOikpRggNV4ruMI/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-d5xEK0bk7iKVZL1wS17L1ff9cta7TQ1HukKhAf0nP0mHccPXEu-nUm15et4jeRdg/exec';
 
 // ════════════════════════════════════════════════════════════
 // PIN — SHA-256 hash of 8899
@@ -449,12 +449,13 @@ async function apiGet(){
 async function apiSave(){
   if(NO_BACKEND){setSyncStatus('offline');return;}
   try{
-    const payload = encodeURIComponent(JSON.stringify({meetings, curIdx}));
-    const url = APPS_SCRIPT_URL+'?action=save&data='+payload+'&t='+Date.now();
-    const r = await fetch(url);
-    const d = await r.json();
-    if(d.ok) setSyncStatus('saved');
-    else setSyncStatus('error');
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({action:'save_all', meetings, curIdx}),
+      headers: {'Content-Type': 'text/plain'}
+    });
+    setSyncStatus('saved');
   }catch{
     setSyncStatus('error');
   }
